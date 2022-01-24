@@ -8,15 +8,18 @@ type Message =
     | HelpRequested
     | NotParsable of string
 
-type State = Domain.State
+type Train = Domain.Train //state
 
 let read (input : string) =
     match input with
-    | Increment -> Domain.Increment |> DomainMessage
-    | Decrement -> Domain.Decrement |> DomainMessage
-    | IncrementBy v -> Domain.IncrementBy v |> DomainMessage
-    | DecrementBy v -> Domain.DecrementBy v |> DomainMessage
+    | NewTrain -> Domain.NewTrain |> DomainMessage
+    | Overview -> Domain.Overview |> DomainMessage
+    | AddWaggon waggons -> Domain.AddWaggon waggons |> DomainMessage
+    | RemoveWaggon waggonName -> Domain.RemoveWaggon waggonName |> DomainMessage
+    | AddLokomotive lok -> Domain.AddLokomotive lok |> DomainMessage
+    | RemoveLokomotive -> Domain.RemoveLokomotive |> DomainMessage
     | Help -> HelpRequested
+    | Reset -> Domain.Reset |> DomainMessage
     | ParseFailed  -> NotParsable input
 
 open Microsoft.FSharp.Reflection
@@ -27,29 +30,34 @@ let createHelpText () : string =
     |> Array.fold (fun prev curr -> prev + " " + curr) ""
     |> (fun s -> s.Trim() |> sprintf "Known commands are: %s")
 
-let evaluate (update : Domain.Message -> State -> State) (state : State) (msg : Message) =
+//let evaluateTrain (msg: Domain.Message) (Train: Train) (result: Domain.Result)
+//    match result with
+//    | Domain.Train train ->
+//        match msg with
+//        |Domain.
+
+let evaluate (update : Domain.Message -> Train -> Train) (train : Train) (msg : Message) =
     match msg with
     | DomainMessage msg ->
-        let newState = update msg state
+        let newState = update msg train
         let message = sprintf "The message was %A. New state is %A" msg newState
         (newState, message)
     | HelpRequested ->
         let message = createHelpText ()
-        (state, message)
+        (train, message)
     | NotParsable originalInput ->
         let message =
             sprintf """"%s" was not parsable. %s"""  originalInput "You can get information about known commands by typing \"Help\""
-        (state, message)
+        (train, message)
 
-let print (state : State, outputToPrint : string) =
+let print (train : Domain.Train, outputToPrint : string) = //Domain.Train or just Train ?
     printfn "%s\n" outputToPrint
     printf "> "
+    train
 
-    state
-
-let rec loop (state : State) =
+let rec loop (train : Train) =
     Console.ReadLine()
     |> read
-    |> evaluate Domain.update state
+    |> evaluate Domain.update train
     |> print
     |> loop

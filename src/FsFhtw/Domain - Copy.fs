@@ -1,4 +1,4 @@
-module Domain
+module blablabla
 
 type WaggonName = string
 type WaggonWeight = decimal
@@ -23,16 +23,6 @@ type Lokomotive =
     powerInKg : CarrierPower
     }
 
-type EmptyTrain = EmptyTrain
-
-type TrainWithoutWaggons =
-    {
-    lokomotive: Lokomotive }
-
-type TrainWithoutLok =
-    {
-    waggons : list<Waggons> }
-
 type DockingStatus =
     | Undocked
     | Docked
@@ -50,14 +40,35 @@ type TrainwithoutLokState =
     //list<Waggons>
 type TrainWithoutWaggonsState = Lokomotive
 
-type Train =
-    | EmptyTrain
-    | TrainWithoutWaggons of TrainWithoutWaggonsState
-    | TrainWithoutLok of TrainwithoutLokState
-    | FinishedTrain of FinishedTrainState
-//| DockedTrain
+type Lokstatus =
+    | NoLok
+    | Lokomotive of Lokomotive
 
-let init () : Train = EmptyTrain
+type WaggonInTrain =
+    {
+    waggons : Waggons}
+
+type WaggonStatus =
+    | NoWaggons
+    | Waggon of WaggonInTrain
+
+type DockedStatus =
+    | Undocked
+    | Docked
+
+type Train =
+    {
+    lok : Lokstatus
+    waggons : list<Waggons>
+    dockedStatus : DockedStatus
+    }
+
+let init () : Train =
+    {
+    lok = NoLok
+    waggons = []
+    dockedStatus = Undocked
+    }
 
 type FailureReason =
     | KeineWaggons
@@ -100,11 +111,20 @@ type Message =
 //    | TrainWithoutLok -> TrainWithoutLok { waggons = waggons = [{ name = name; weightInKg = weightInKg; quantity = quantity } ]}
 //    | FinishedTrain -> FinishedTrain { dockingStatus = DockingStatus ; lokomotive = Lokomotive ; waggons = waggons = [{ name = name; weightInKg = weightInKg; quantity = quantity } ]}
 
-let AddWaggon (train : Train) (name : WaggonName) (weightInKg : WaggonWeight) (amount : WaggonQuantity) =
-    match train with
+let AddWaggon {lok = currentLok ; waggons = currentWaggons ; dockedStatus = currentDockedStatus DockedStatus} =
+    
+
+
+
+(train : Train) (name : WaggonName) (weightInKg : WaggonWeight) (amount : WaggonQuantity) =
+    match train.waggonStatus with
+    | NoWaggons -> None
+    | Waggon waggons -> Waggon { name = name; weightInKg = weightInKg; quantity = amount }
+
+let OldFunction =
     | EmptyTrain -> TrainWithoutLok { waggons = [{ name = name; weightInKg = weightInKg; quantity = amount }] }
     | TrainWithoutLok train -> TrainWithoutLok { waggons = { name = name; weightInKg = weightInKg; quantity = amount } :: train.waggons }
-    | TrainWithoutWaggons train -> FinishedTrain { dockingStatus = Undocked ; lokomotive = TrainWithoutWaggons.lokomotive. ; waggons = { name = name; weightInKg = weightInKg; quantity = amount } :: train.waggons }
+    | TrainWithoutWaggons train -> FinishedTrain { dockingStatus = Undocked ; lokomotive = lokomotive ; waggons = { name = name; weightInKg = weightInKg; quantity = amount } :: train.waggons }
     | FinishedTrain -> FinishedTrain (waggons = { name = name; weightInKg = weightInKg; quantity = quantity} :: waggons )
 
 let RemoveWaggon (Train : Train) (name : WaggonName) (weightInKg : WaggonWeight) (quantity : WaggonQuantity) =
@@ -164,7 +184,7 @@ let trainApi: TrainApi =
 
 let update (msg : Message) (oldTrain : Train) : Train =
     match msg with
-    | NewTrain -> trainApi.NewTrain oldTrain.
+    | NewTrain -> trainApi.NewTrain oldTrain
     | Overview -> trainApi.Overview oldTrain
     | AddWaggon waggons -> trainApi.AddWaggon oldTrain waggons
     | RemoveWaggon waggonName -> trainApi.RemoveWaggon oldTrain waggonName
