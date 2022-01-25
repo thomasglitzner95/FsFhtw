@@ -18,10 +18,11 @@ let (|NewTrain|Overview|AddWaggon|RemoveWaggon|Help|ParseFailed|) (input : strin
 
     match parts with
     | [ verb ] when safeEquals verb HelpLabel -> Help
-    | [ verb ] when safeEquals verb (nameof Domain.NewTrain) -> NewTrain
-    | [ verb ] when safeEquals verb (nameof Domain.Overview) -> Overview
-    | [ verb; name ; weight; amount ] when safeEquals verb (nameof Domain.AddWaggon) -> tryParseInt weight (fun w -> tryParseInt amount (fun a -> AddWaggon name weight amount ))
-    | [ verb; name ] when safeEquals verb (nameof Domain.Train) -> RemoveWaggon name
+    | [ verb ] when safeEquals verb (nameof Domain.Train) -> NewTrain
+//    | [ verb ] when safeEquals verb (nameof Domain.Train) -> Overview
+    | [ verb; name; weight; amount ] when safeEquals verb (nameof Domain.Train) ->
+    tryParseInt weight (fun w -> tryParseInt amount (fun a -> AddWaggon { name = name ; weight = weight ; amount = amount}))
+    | [ verb ] when safeEquals verb (nameof Domain.Train) -> RemoveWaggon name
     | [ verb ] when safeEquals verb HelpLabel -> Help
     | _ -> ParseFailed
 
@@ -33,7 +34,7 @@ let (|AddLok|RemoveLok|ParseFailed|) (input : string) =
 
     let parts = input.Split(' ') |> List.ofArray
     match parts with
-    | [ verb; name; force ] when safeEquals verb (nameof Domain.Train) ->
+    | [ verb; name; force ] when safeEquals verb (nameof Domain.Train) -> 
     tryParseInt force (fun f -> tryParseInt amount (fun a -> AddLok { name = name ; force = force}))
     | [ verb; name ] when safeEquals verb (nameof Domain.Train) -> RemoveLok name
     | [ verb, arg ] when verb = "reset" -> Reset //so zusätzliche cases einbauen
