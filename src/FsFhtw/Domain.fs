@@ -3,24 +3,28 @@ module Domain
 type Waggons =
     {
     name: string
-    weightInKg : decimal
-    quantity : decimal }
+    weightInKg : int
+    quantity : int }
+
 
 type Lokomotive =
     {
     lokName : string
-    powerInKg : decimal
+    powerInKg : int
     }
+
+type LokStatus =
+    | NoLok
+    | SomeLok of Lokomotive
 
 type Train =
     {
-    trainStatus : TrainStatus
-    lokomotive : Lokomotive
+    lokStatus : LokStatus
     waggons : list<Waggons> }
 
 let init () : Train =
     {
-    lokomotive = []
+    lokStatus = NoLok
     waggons = [] }
 
 type FailureReason =
@@ -41,17 +45,15 @@ type RemoveLok = Train -> Lokomotive -> Train
 
 type Message =
     | NewTrain of Train //starts from a fresh state
-    | TrainStatusOverview of Train //of current train and its waggons
+//| TrainStatusOverview of Train //of current train and its waggons
     | AddWaggon of Waggons
     | RemoveWaggon of Waggons
     | AddLok of Lokomotive
-    | RemoveLok of Lokomotive
+    | RemoveLok of string
 //    | Dock
 
 let NewTrain (train : Train)=
-    match train.trainStatus with
-//    | DockedTrain -> DockedTrain
-    | _ -> { trainStatus = EmptyTrain; lokomotive = [] ; waggons = [] }
+    { lokStatus = NoLok ; waggons = [] }
 
 type TrainStatus =
     | EmptyTrain
@@ -76,32 +78,31 @@ type TrainStatus =
 //                    Trainstatus = FinishedTrain
 
 let AddWaggon (train : Train) (newWaggons) = //muss das komplette waggonModell übergeben
-    { lokomotive = train.lokomotive ; waggons = newWaggons :: train.waggons }
+    { lokStatus = train.lokStatus ; waggons = newWaggons :: train.waggons }
 
-let RemoveWaggon (train : Train) (waggonName : WaggonName) =
-    match train.waggons with
-    | Some -> { lokomotive = train.lokomotive ; waggons = train.waggons.filter(fun w -> w.name.equals(waggonName)) }
-    | _ -> FailureReason(KeineWaggons("No waggons to remove"))
+let RemoveWaggon (train : Train) (waggonName : string) =
+    { lokStatus = train.lokStatus ; waggons = train.waggons|> List.filter(fun w -> w.name = waggonName)}
+
+//match train.waggons with
+//| List<waggons> -> 
+//| _ -> FailureReason(KeineWaggons("No waggons to remove"))
 
 let AddLok (train : Train) (lok : Lokomotive)  = //(lokname : string) (power : decimal)
-    match train.lokomotive with
-    | [] -> { lokomotive = lok ; waggons = train.waggons }
-    | Some -> LokAlreadyActiveFailure("This train already has a lok")
+    match train.lokStatus with
+    | NoLok -> SomeLok { lokName = lok.lokName ; powerInKg = lok.powerInKg }
+    | SomeLok lok -> SomeLok lok //|LokAlreadyActiveFailure("This train already has a lok")
 
 let RemoveLok (train : Train) =
-    match train.lokomotive with
-    | Some lokomotive -> { lokomotive = [] ; waggons = train.waggons }
-    | [] -> NoLokFoundFailure("This train has no lokomotive to remove")
-
+    match train.lokStatus with
+    | SomeLok lok ->  NoLok
+    | NoLok -> NoLok //|NoLokFoundFailure("This train has no lokomotive to remove")
 
 let update (msg : Message) (oldTrain : Train) : Train =
     match msg with
-    | NewTrain name -> Domain.NewTrain msg.name
+    | NewTrain msg -> NewTrain msg
+    | AddWaggon waggons -> AddWaggon oldTrain waggons
+    | RemoveWaggon waggonName -> RemoveWaggon oldTrain waggonName
+    | AddLok lok -> AddLok oldTrain lok
+    | RemoveLok msg -> RemoveLok oldTrain
 //    | TrainStatusOverview -> Domain.Overview oldTrain
-    | AddWaggon waggons -> Domain.AddWaggon oldTrain waggons
-    | RemoveWaggon waggonName -> Domain.RemoveWaggon oldTrain waggonName
-    | AddLok lokName -> Domain.AddLok oldTrain lokName
-    | RemoveLok -> Domain.RemoveLok oldTrain
 //    | Dock -> Domain.Dock oldTrain
-
-
